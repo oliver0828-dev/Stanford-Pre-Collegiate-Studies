@@ -1,0 +1,81 @@
+---
+title: "Short Project | Oliver"
+author: "Oliver Park"
+date: "2024-07-14"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    social: menu
+    source_code: embed
+runtime: shiny
+---
+This data set represents the outcome of the game between the Boston Celtics and the Golden State Warriors. You can choose two different graphs: scatter plot and histogram. The scatter plot will show the game outcome (win or loss) against the game score.The histogram will show the frequency of the scores against the game outcome determine by win or loss.
+```{r}
+library(shiny)
+library(ggplot2)
+library(readr)
+
+WC <- read.csv("warriorsceltics.csv")
+
+create_scatter_plot <- function(team) {
+  data <- WC[c(paste0(team, ".score"), paste0("Win.or.Loss.for.", team))]
+  colnames(data) <- c("score", "win_loss")
+  
+  team_colors <- list(
+    Warriors = c("W" = "blue", "L" = "gold"),
+    Celtics = c("W" = "green", "L" = "red")
+  )
+  
+  ggplot(data, aes(x = score, y = win_loss)) +
+    geom_jitter(aes(color = win_loss), width = 0.1, height = 0.1) +
+    scale_color_manual(values = team_colors[[team]]) +
+    labs(title = paste(team, "Score by Game Outcome"),
+         x = paste(team, "Score"),
+         y = "Game Outcome") +
+    theme_minimal()
+}
+
+
+create_histogram_plot <- function(team) {
+  data <- WC[c(paste0(team, ".score"), paste0("Win.or.Loss.for.", team))]
+  colnames(data) <- c("score", "win_loss")
+  
+  team_colors <- list(
+    Warriors = c("W" = "blue", "L" = "yellow"),
+    Celtics = c("W" = "green", "L" = "red")
+  )
+  
+  ggplot(data, aes(x = score, fill = win_loss)) +
+    geom_histogram(binwidth = 5, color = "black", alpha = 0.7, position = "identity") +
+    scale_fill_manual(values = team_colors[[team]]) +
+    labs(title = paste(team, "Score by Game Outcome"),
+         x = paste(team, "Score"),
+         y = "Frequency") +
+    theme_minimal()
+}
+
+ui <- fluidPage(
+  plotOutput("plot")
+)
+
+ui <- fluidPage(
+  selectInput("plot_type", "Choose a plot type:",
+              choices = c("Scatter Plot", "Histogram")),
+  selectInput("team", "Choose a team:",
+              choices = c("Celtics", "Warriors")),
+  plotOutput("plot")
+)
+
+server <- function(input, output) {
+  
+  output$plot <- renderPlot({
+    if (input$plot_type == "Scatter Plot") {
+      create_scatter_plot(input$team)
+    } else {
+      create_histogram_plot(input$team)
+    }
+  })
+}
+
+shinyApp(ui = ui, server = server)
+```
